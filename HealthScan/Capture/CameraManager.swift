@@ -28,6 +28,12 @@ class CameraManager: NSObject {
     private(set) var captureSession: AVCaptureSession?
     var signalQuality: SignalQuality = .noisy
     var recordingLength: Int { recordingDuration }
+    /// True when device thermal state is .serious or .critical — pauses capture
+    var thermalWarningActive = false
+    /// rMSSD HRV value (ms) from the last completed measurement, nil if not enough peaks
+    var lastHRVms: Double?
+    /// Real-time finger placement and sensor convergence state
+    var contactState: SensorContactState = .noFinger
     
     // MARK: - Internal Properties
     
@@ -35,6 +41,9 @@ class CameraManager: NSObject {
     let sessionQueue = DispatchQueue(label: "com.climbpulse.camera.session")
     let processingQueue = DispatchQueue(label: "com.climbpulse.camera.processing")
     var previousRedValue: Double?
+    var calibrationFramesCount: Int = 0
+    var hasLockedExposure = false
+    var frameCounter: Int = 0
     
     // Thread-safe recording state
     nonisolated let recordingState = RecordingState()
@@ -74,9 +83,24 @@ class CameraManager: NSObject {
         countdownStarted = false
         previousRedValue = nil
         detectionStartTimestamp = nil
+        contactState = .noFinger
+        calibrationFramesCount = 0
+        hasLockedExposure = false
+        frameCounter = 0
         
         sessionQueue.async { [weak self] in
             guard let self = self else { return }
+            
+            // Guard against starting a recording when the device is already hot.
+            let thermal = ProcessInfo.processInfo.thermalState
+            if thermal == .serious || thermal == .critical {
+                Task { @MainActor in
+                    self.thermalWarningActive = true
+                    self.errorMessage = "Device is too hot. Let it cool before measuring."
+                }
+                return
+            }
+            
             do {
                 let (session, output) = try self.setupCaptureSession()
                 self.setTorch(on: true)
@@ -87,6 +111,7 @@ class CameraManager: NSObject {
                     self.captureSession = session
                     self.videoOutput = output
                     self.isRecording = true
+                    self.thermalWarningActive = false
                 }
             } catch {
                 Task { @MainActor in
@@ -112,37 +137,13 @@ class CameraManager: NSObject {
             Task { @MainActor in
                 self.captureSession = nil
                 self.isRecording = false
+                self.contactState = .noFinger
                 self.processAndSaveMeasurement()
             }
         }
     }
     
     // MARK: - Signal Processing Helpers
-    
-    func startTimer() {
-        timer?.invalidate()
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            guard let self = self else { return }
-            Task { @MainActor in
-                if self.timeRemaining > 0 {
-                    self.timeRemaining -= 1
-                } else {
-                    self.stopRecording()
-                }
-            }
-        }
-    }
-    
-    func estimatedSampleRate() -> Double {
-        guard samples.count > 1,
-              let first = samples.first?.timestamp,
-              let last = samples.last?.timestamp else {
-            return 30.0
-        }
-        let duration = last - first
-        guard duration > 0 else { return 30.0 }
-        return Double(samples.count) / duration
-    }
     
     func updateBPMIfNeeded() {
         let now = Date()
@@ -160,13 +161,5 @@ class CameraManager: NSObject {
         if !countdownStarted, bpm != nil {
             beginCountdownFromNow()
         }
-    }
-    
-    private func beginCountdownFromNow() {
-        countdownStarted = true
-        self.recordingState.startTime = Date()
-        self.detectionStartTimestamp = samples.last?.timestamp
-        self.timeRemaining = recordingDuration
-        self.startTimer()
     }
 }

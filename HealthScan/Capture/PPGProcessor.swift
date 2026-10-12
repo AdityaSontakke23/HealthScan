@@ -116,4 +116,35 @@ final class PPGProcessor: Sendable {
         let filtered = bandPassFilter(signal: preprocessed, sampleRate: sampleRate)
         return zip(samples, filtered).map { PPGSample(timestamp: $0.timestamp, value: $1) }
     }
+    
+    /// Compute rMSSD (root mean square of successive RR interval differences) in milliseconds.
+    /// Applies cardiac band-pass filtering and calculates differences between strictly consecutive intervals.
+    func calculateHRV(samples: [PPGSample], sampleRate: Double) -> Double? {
+        guard samples.count >= minSamplesForBPM else { return nil }
+        
+        let preprocessed = preprocess(signal: samples.map { $0.value })
+        let filtered = bandPassFilter(signal: preprocessed, sampleRate: sampleRate)
+        let peaks = detectPeaks(in: filtered)
+        guard peaks.count >= 3 else { return nil }
+        
+        var diffs: [Double] = []
+        for i in 1..<(peaks.count - 1) {
+            let tPrev = samples[peaks[i - 1]].timestamp
+            let tCurr = samples[peaks[i]].timestamp
+            let tNext = samples[peaks[i + 1]].timestamp
+            
+            let rr1 = (tCurr - tPrev) * 1000.0  // ms
+            let rr2 = (tNext - tCurr) * 1000.0  // ms
+            
+            // Both intervals must be physiologically valid (300-1500 ms, 40-200 BPM)
+            if rr1 >= 300 && rr1 <= 1500 && rr2 >= 300 && rr2 <= 1500 {
+                let diff = rr2 - rr1
+                diffs.append(diff)
+            }
+        }
+        
+        guard !diffs.isEmpty else { return nil }
+        let sumSquaredDiff = diffs.reduce(0.0) { $0 + ($1 * $1) }
+        return sqrt(sumSquaredDiff / Double(diffs.count))
+    }
 }

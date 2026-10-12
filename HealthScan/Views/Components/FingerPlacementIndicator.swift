@@ -10,23 +10,26 @@ import SwiftUI
 struct FingerPlacementIndicator: View {
     let sampleCount: Int
     let signalQuality: SignalQuality
+    var contactState: SensorContactState = .measuring
     
     private var signalStrength: SignalStrength {
-        if sampleCount < 10 {
+        switch contactState {
+        case .noFinger:
             return .none
-        } else if signalQuality == .good {
-            return .good
-        } else {
-            return .weak
+        case .calibrating:
+            return .calibrating
+        case .measuring:
+            return signalQuality == .good ? .good : .weak
         }
     }
     
     enum SignalStrength {
-        case none, weak, good
+        case none, calibrating, weak, good
         
         var color: Color {
             switch self {
-            case .none: return .gray
+            case .none: return .red
+            case .calibrating: return .cyan
             case .weak: return .yellow
             case .good: return Color(red: 1.0, green: 0.51, blue: 0.0)
             }
@@ -34,8 +37,9 @@ struct FingerPlacementIndicator: View {
         
         var text: String {
             switch self {
-            case .none: return "No signal"
-            case .weak: return "Adjust finger for a clearer signal"
+            case .none: return "Cover camera & flash with finger"
+            case .calibrating: return "Calibrating sensor..."
+            case .weak: return "Hold steady for clearer signal"
             case .good: return "Signal looks good"
             }
         }

@@ -25,6 +25,7 @@ struct Measurement: Codable, Identifiable, Sendable {
     let bpm: Int                 // Final estimated heart rate
     let quality: SignalQuality   // Signal quality assessment
     let ppgData: [Double]        // Downsampled PPG values for storage
+    let hrvMs: Double?           // rMSSD HRV in milliseconds, nil if < 3 peaks detected
     
     init(
         userId: String,
@@ -33,7 +34,8 @@ struct Measurement: Codable, Identifiable, Sendable {
         sampleRate: Double,
         bpm: Int,
         quality: SignalQuality,
-        ppgData: [Double]
+        ppgData: [Double],
+        hrvMs: Double? = nil
     ) {
         self.id = UUID()
         self.userId = userId
@@ -44,6 +46,7 @@ struct Measurement: Codable, Identifiable, Sendable {
         self.bpm = bpm
         self.quality = quality
         self.ppgData = ppgData
+        self.hrvMs = hrvMs
     }
     
     /// Get device model name

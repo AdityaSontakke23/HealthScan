@@ -9,7 +9,7 @@ import Foundation
 import CoreMedia
 
 /// Thread-safe storage for recording start time (accessed from multiple threads).
-final class RecordingState: @unchecked Sendable {
+nonisolated final class RecordingState: @unchecked Sendable {
     private let lock = NSLock()
     private var _startTime: Date?
     private var _startPTS: CMTime?

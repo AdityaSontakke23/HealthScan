@@ -132,7 +132,8 @@ struct RecordingView: View {
                 VStack(spacing: 12) {
                     FingerPlacementIndicator(
                         sampleCount: cameraManager.samples.count,
-                        signalQuality: cameraManager.signalQuality
+                        signalQuality: cameraManager.signalQuality,
+                        contactState: cameraManager.contactState
                     )
                     
                     Text("Keep your finger steady on the rear camera + flash")

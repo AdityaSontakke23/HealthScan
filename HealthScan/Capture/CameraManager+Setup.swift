@@ -28,6 +28,27 @@ extension CameraManager {
         @unknown default:
             isAuthorized = false
         }
+        
+        // Register for thermal state changes so we can warn and pause mid-recording
+        NotificationCenter.default.addObserver(
+            forName: ProcessInfo.thermalStateDidChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self else { return }
+            Task { @MainActor in
+                let state = ProcessInfo.processInfo.thermalState
+                if state == .serious || state == .critical {
+                    self.thermalWarningActive = true
+                    if self.isRecording {
+                        self.errorMessage = "Device is overheating. Recording stopped."
+                        self.stopRecording()
+                    }
+                } else {
+                    self.thermalWarningActive = false
+                }
+            }
+        }
     }
     
     // MARK: - Capture Session Setup
@@ -42,11 +63,14 @@ extension CameraManager {
         }
         
         try camera.lockForConfiguration()
-        if camera.isExposureModeSupported(.locked) {
-            camera.exposureMode = .locked
+        if camera.isExposureModeSupported(.continuousAutoExposure) {
+            camera.exposureMode = .continuousAutoExposure
         }
-        if camera.isWhiteBalanceModeSupported(.locked) {
-            camera.whiteBalanceMode = .locked
+        if camera.isWhiteBalanceModeSupported(.continuousAutoWhiteBalance) {
+            camera.whiteBalanceMode = .continuousAutoWhiteBalance
+        }
+        if camera.isAutoFocusRangeRestrictionSupported {
+            camera.autoFocusRangeRestriction = .near
         }
         camera.activeVideoMinFrameDuration = CMTime(value: 1, timescale: 30)
         camera.activeVideoMaxFrameDuration = CMTime(value: 1, timescale: 30)
@@ -83,12 +107,27 @@ extension CameraManager {
             try device.lockForConfiguration()
             device.torchMode = on ? .on : .off
             if on {
-                let desiredLevel = min(0.6, AVCaptureDevice.maxAvailableTorchLevel)
-                try device.setTorchModeOn(level: desiredLevel)
+                // 0.15 is sufficient for PPG capture and prevents skin heating
+                // and thermal throttling. Never exceed 0.3 for sustained contact use.
+                let safeLevel = min(0.15, AVCaptureDevice.maxAvailableTorchLevel)
+                try device.setTorchModeOn(level: safeLevel)
             }
             device.unlockForConfiguration()
         } catch {
             print("Torch error: \(error)")
+        }
+    }
+    
+    /// Dynamically lock exposure and white balance once finger covers the lens and signal converges.
+    nonisolated func lockExposureAndWhiteBalance() {
+        guard let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) else { return }
+        do {
+            try device.lockForConfiguration()
+            if device.isExposureModeSupported(.locked) { device.exposureMode = .locked }
+            if device.isWhiteBalanceModeSupported(.locked) { device.whiteBalanceMode = .locked }
+            device.unlockForConfiguration()
+        } catch {
+            print("Lock exposure error: \(error)")
         }
     }
     
@@ -131,13 +170,18 @@ extension CameraManager {
         let downsampledPPG = ppgProcessor.downsample(samples: cleaned)
         let duration = cleaned.last!.timestamp - cleaned.first!.timestamp
         
+        // Compute rMSSD HRV using actual CMTime-derived timestamps for precision
+        let hrv = ppgProcessor.calculateHRV(samples: cleaned, sampleRate: sampleRate)
+        lastHRVms = hrv
+        
         let measurement = Measurement(
             userId: Self.getUserId(),
             duration: duration,
             sampleRate: sampleRate,
             bpm: finalBPM,
             quality: quality,
-            ppgData: downsampledPPG
+            ppgData: downsampledPPG,
+            hrvMs: hrv
         )
         onRecordingComplete?(measurement)
     }
