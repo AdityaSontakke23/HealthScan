@@ -1,0 +1,16 @@
+# macOS
+.DS_Store
+
+# Xcode
+xcuserdata/
+DerivedData/
+build/
+*.xcuserstate
+.swiftpm/
+
+# Agent tooling (reinstallable)
+.agents/
+.agent/
+.claude/
+.tomevault/
+skills-lock.json
