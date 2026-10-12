@@ -9,13 +9,13 @@ import Foundation
 import UIKit
 
 /// Quality assessment of the PPG signal
-enum SignalQuality: String, Codable {
+enum SignalQuality: String, Codable, Sendable {
     case good = "Good"
     case noisy = "Noisy"
 }
 
 /// A complete measurement record ready for local storage and future API upload.
-struct Measurement: Codable, Identifiable {
+struct Measurement: Codable, Identifiable, Sendable {
     let id: UUID
     let userId: String           // Anonymous user ID (persisted per device)
     let deviceModel: String      // e.g., "iPhone 14 Pro"
@@ -82,10 +82,7 @@ struct Measurement: Codable, Identifiable {
     
     /// Formatted date string for display
     var formattedDate: String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .short
-        return formatter.string(from: timestamp)
+        timestamp.formatted(date: .abbreviated, time: .shortened)
     }
     
     /// Convert to JSON Data for API upload

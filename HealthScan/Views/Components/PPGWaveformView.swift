@@ -30,7 +30,7 @@ struct PPGWaveformView: View {
             }
         }
         .background((colorScheme == .dark ? Color.black.opacity(0.35) : Color.white.opacity(0.08)))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .clipShape(.rect(cornerRadius: 12))
         .overlay(
             RoundedRectangle(cornerRadius: 12)
                 .stroke((colorScheme == .dark ? Color.white.opacity(0.14) : Color.black.opacity(0.08)), lineWidth: 1)

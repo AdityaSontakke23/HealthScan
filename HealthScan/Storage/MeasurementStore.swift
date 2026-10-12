@@ -7,13 +7,14 @@
 
 import Foundation
 import SwiftUI
-import Combine
+import Observation
 
 /// Manages local persistence of measurements.
+@Observable
 @MainActor
-class MeasurementStore: ObservableObject {
+final class MeasurementStore {
     
-    @Published var measurements: [Measurement] = []
+    var measurements: [Measurement] = []
     
     private let fileName = "measurements.json"
     
@@ -52,14 +53,14 @@ class MeasurementStore: ObservableObject {
     /// Get URL for storage file.
     private func fileURL() -> URL {
         let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-        return documentsDirectory.appendingPathComponent(fileName)
+        return documentsDirectory.appending(path: fileName)
     }
     
     /// Load measurements from disk.
     private func loadMeasurements() {
         let url = fileURL()
         
-        guard FileManager.default.fileExists(atPath: url.path) else {
+        guard FileManager.default.fileExists(atPath: url.path()) else {
             measurements = []
             return
         }

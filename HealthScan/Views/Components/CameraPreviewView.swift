@@ -7,7 +7,7 @@
 //
 
 import SwiftUI
-import AVFoundation
+@preconcurrency import AVFoundation
 
 struct CameraPreviewView: UIViewRepresentable {
     let session: AVCaptureSession?
@@ -15,7 +15,10 @@ struct CameraPreviewView: UIViewRepresentable {
     func makeUIView(context: Context) -> PreviewView {
         let view = PreviewView()
         view.videoPreviewLayer.videoGravity = .resizeAspectFill
-        view.videoPreviewLayer.connection?.videoOrientation = .portrait
+        if let connection = view.videoPreviewLayer.connection,
+           connection.isVideoRotationAngleSupported(90) {
+            connection.videoRotationAngle = 90
+        }
         return view
     }
     

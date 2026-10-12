@@ -8,8 +8,8 @@
 import SwiftUI
 
 struct HomeView: View {
-    @StateObject private var cameraManager = CameraManager()
-    @EnvironmentObject var measurementStore: MeasurementStore
+    @State private var cameraManager = CameraManager()
+    @Environment(MeasurementStore.self) private var measurementStore
     @Environment(\.colorScheme) private var colorScheme
     
     @State private var showRecording = false
@@ -46,14 +46,6 @@ struct HomeView: View {
         colorScheme == .dark ? Color.white.opacity(0.7) : darkBlue.opacity(0.6)
     }
     
-    private var cardBackground: Color {
-        colorScheme == .dark ? Color.white.opacity(0.08) : Color.white
-    }
-    
-    private var cardBorder: Color {
-        colorScheme == .dark ? Color.white.opacity(0.08) : primaryBlue.opacity(0.08)
-    }
-    
     var body: some View {
         NavigationStack {
             ZStack {
@@ -69,16 +61,16 @@ struct HomeView: View {
                             .resizable()
                             .scaledToFit()
                             .frame(width: 120, height: 120)
-                            .clipShape(RoundedRectangle(cornerRadius: 24))
+                            .clipShape(.rect(cornerRadius: 24))
                             .shadow(color: Color.black.opacity(0.35), radius: 20, y: 10)
                         
                         Text("ClimbPulse")
                             .font(.system(size: 36, weight: .bold, design: .rounded))
-                            .foregroundColor(primaryText)
+                            .foregroundStyle(primaryText)
                         
                         Text("Heart Rate Monitor")
                             .font(.system(size: 18, weight: .medium, design: .rounded))
-                            .foregroundColor(secondaryText)
+                            .foregroundStyle(secondaryText)
                     }
                     
                     Spacer()
@@ -101,7 +93,7 @@ struct HomeView: View {
                             Text("Start Measurement")
                                 .font(.system(size: 20, weight: .semibold, design: .rounded))
                         }
-                        .foregroundColor(.white)
+                        .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 18)
                         .background(
@@ -114,7 +106,7 @@ struct HomeView: View {
                                 endPoint: .trailing
                             )
                         )
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .clipShape(.rect(cornerRadius: 16))
                         .shadow(color: Color.black.opacity(0.35), radius: 12, y: 6)
                     }
                     .padding(.horizontal, 32)
@@ -128,13 +120,13 @@ struct HomeView: View {
                     Spacer()
                 }
             }
-            .navigationBarTitleDisplayMode(.inline)
+            .toolbarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink(destination: HistoryView()) {
                         Image(systemName: "clock.arrow.circlepath")
                             .font(.system(size: 18, weight: .medium))
-                            .foregroundColor(primaryText)
+                            .foregroundStyle(primaryText)
                     }
                 }
             }
@@ -178,76 +170,7 @@ struct HomeView: View {
     }
 }
 
-// MARK: - Supporting Views
-
-struct InstructionRow: View {
-    let icon: String
-    let text: String
-    
-    @Environment(\.colorScheme) private var colorScheme
-    private let primaryBlue = Color(red: 0.0, green: 0.34, blue: 0.65)
-    
-    var body: some View {
-        HStack(spacing: 16) {
-            Image(systemName: icon)
-                .font(.system(size: 20))
-                .foregroundColor(colorScheme == .dark ? Color.white.opacity(0.8) : primaryBlue.opacity(0.7))
-                .frame(width: 32)
-            
-            Text(text)
-                .font(.system(size: 15, weight: .medium, design: .rounded))
-                .foregroundColor(colorScheme == .dark ? Color.white.opacity(0.85) : primaryBlue.opacity(0.85))
-            
-            Spacer()
-        }
-    }
-}
-
-struct LastMeasurementCard: View {
-    let measurement: Measurement
-    
-    @Environment(\.colorScheme) private var colorScheme
-    private let primaryBlue = Color(red: 0.0, green: 0.34, blue: 0.65)
-    private let accentOrange = Color(red: 1.0, green: 0.51, blue: 0.0)
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Last Measurement")
-                .font(.system(size: 12, weight: .medium, design: .rounded))
-                .foregroundColor(colorScheme == .dark ? Color.white.opacity(0.6) : primaryBlue.opacity(0.5))
-            
-            HStack {
-                HStack(spacing: 6) {
-                    Image(systemName: "heart.fill")
-                        .foregroundColor(accentOrange)
-                    Text("\(measurement.bpm)")
-                        .font(.system(size: 24, weight: .bold, design: .rounded))
-                        .foregroundColor(colorScheme == .dark ? Color.white : primaryBlue)
-                    Text("BPM")
-                        .font(.system(size: 14, weight: .medium, design: .rounded))
-                        .foregroundColor(colorScheme == .dark ? Color.white.opacity(0.7) : primaryBlue.opacity(0.6))
-                }
-                
-                Spacer()
-                
-                Text(measurement.formattedDate)
-                    .font(.system(size: 13, weight: .medium, design: .rounded))
-                    .foregroundColor(colorScheme == .dark ? Color.white.opacity(0.6) : primaryBlue.opacity(0.5))
-            }
-        }
-        .padding(16)
-        .background(colorScheme == .dark ? Color.white.opacity(0.08) : Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(colorScheme == .dark ? Color.white.opacity(0.08) : primaryBlue.opacity(0.08), lineWidth: 1)
-        )
-        .shadow(color: Color.black.opacity(0.12), radius: 8, y: 4)
-    }
-}
-
 #Preview {
     HomeView()
-        .environmentObject(MeasurementStore())
+        .environment(MeasurementStore())
 }
-

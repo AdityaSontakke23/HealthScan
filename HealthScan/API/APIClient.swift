@@ -9,7 +9,7 @@ import Foundation
 
 /// API client for uploading measurements to the backend.
 /// Currently a stub - implement actual network calls when backend is ready.
-class APIClient {
+final class APIClient: Sendable {
     
     static let shared = APIClient()
     
@@ -78,7 +78,7 @@ class APIClient {
 
 // MARK: - API Errors
 
-enum APIError: LocalizedError {
+enum APIError: LocalizedError, Sendable {
     case invalidURL
     case encodingFailed
     case invalidResponse

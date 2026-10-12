@@ -8,7 +8,7 @@
 import Foundation
 
 /// Represents a single PPG (photoplethysmography) sample from camera frames.
-struct PPGSample: Codable, Identifiable {
+struct PPGSample: Codable, Identifiable, Sendable {
     let id: UUID
     let timestamp: TimeInterval  // Seconds since recording started
     let value: Double            // Average red channel intensity (0-255 normalized)

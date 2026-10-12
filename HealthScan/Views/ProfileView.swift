@@ -27,15 +27,9 @@ struct ProfileView: View {
         )
     }
     
-    private var ageText: String {
-        let calendar = Calendar.current
-        let years = calendar.dateComponents([.year], from: Date(timeIntervalSince1970: birthDate), to: Date()).year ?? 0
-        return "\(max(years, 0)) years"
-    }
-    
     var body: some View {
         Form {
-            Section(header: Text("Basic Info")) {
+            Section("Basic Info") {
                 Picker("Legal gender", selection: $gender) {
                     ForEach(Gender.allCases, id: \.self) { g in
                         Text(g.label).tag(g)
@@ -49,7 +43,7 @@ struct ProfileView: View {
                         Text("Birth month & year")
                         Spacer()
                         Text(formattedBirthDate)
-                            .foregroundColor(.secondary)
+                            .foregroundStyle(.secondary)
                     }
                 }
                 
@@ -60,28 +54,28 @@ struct ProfileView: View {
                 }
             }
             
-            Section(header: Text("Body Metrics")) {
+            Section("Body Metrics") {
                 Button {
-                    showWeightSheet = true
                     pickerWeight = Int(weight) ?? 65
+                    showWeightSheet = true
                 } label: {
                     HStack {
                         Text("Weight (kg)")
                         Spacer()
                         Text(weight.isEmpty ? "Not set" : weight)
-                            .foregroundColor(.secondary)
+                            .foregroundStyle(.secondary)
                     }
                 }
                 
                 Button {
-                    showHeightSheet = true
                     pickerHeight = Int(height) ?? 170
+                    showHeightSheet = true
                 } label: {
                     HStack {
                         Text("Height (cm)")
                         Spacer()
                         Text(height.isEmpty ? "Not set" : height)
-                            .foregroundColor(.secondary)
+                            .foregroundStyle(.secondary)
                     }
                 }
             }
@@ -124,153 +118,8 @@ struct ProfileView: View {
     }
 }
 
-enum Gender: String, CaseIterable, Codable {
-    case male, female, unspecified
-    
-    var label: String {
-        switch self {
-        case .male: return "Man"
-        case .female: return "Woman"
-        case .unspecified: return "Prefer not to say"
-        }
-    }
-}
-
 #Preview {
     NavigationStack {
         ProfileView()
     }
 }
-
-// MARK: - Sheets
-
-private struct BirthDateSheet: View {
-    @Binding var date: Date
-    var onDone: () -> Void
-    
-    var body: some View {
-        NavigationStack {
-            VStack {
-                DatePicker(
-                    "Select birth month & year",
-                    selection: $date,
-                    displayedComponents: [.date]
-                )
-                .datePickerStyle(.wheel)
-                .labelsHidden()
-                .padding()
-                
-                Spacer()
-            }
-            .navigationTitle("Birth date")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") { onDone() }
-                        .font(.headline)
-                }
-            }
-        }
-    }
-}
-
-private struct NumberEntrySheet: View {
-    let title: String
-    @Binding var value: String
-    let placeholder: String
-    let keyboardType: UIKeyboardType
-    var onDone: () -> Void
-    @FocusState private var focused: Bool
-    
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: 16) {
-                TextField(placeholder, text: $value)
-                    .keyboardType(keyboardType)
-                    .textFieldStyle(.roundedBorder)
-                    .focused($focused)
-                    .padding()
-                
-                Spacer()
-            }
-            .navigationTitle(title)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .keyboard) {
-                    HStack {
-                        Spacer()
-                        Button("Done") {
-                            focused = false
-                            onDone()
-                        }
-                        .font(.headline)
-                    }
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") {
-                        focused = false
-                        onDone()
-                    }
-                    .font(.headline)
-                }
-            }
-            .onAppear {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                    focused = true
-                }
-            }
-        }
-    }
-}
-
-private struct NumberPickerSheet: View {
-    let title: String
-    let range: ClosedRange<Int>
-    @Binding var selection: Int
-    var onDone: () -> Void
-    
-    var body: some View {
-        NavigationStack {
-            VStack {
-                Picker("", selection: $selection) {
-                    ForEach(Array(range), id: \.self) { value in
-                        Text("\(value)").tag(value)
-                    }
-                }
-                .labelsHidden()
-                .pickerStyle(.wheel)
-                .frame(maxHeight: 250)
-                
-                Spacer()
-            }
-            .navigationTitle(title)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") { onDone() }
-                        .font(.headline)
-                }
-            }
-        }
-    }
-}
-
-enum Education: String, CaseIterable, Codable {
-    case basic, highSchool, university, unspecified
-    
-    var label: String {
-        switch self {
-        case .basic: return "Basic"
-        case .highSchool: return "High school"
-        case .university: return "University"
-        case .unspecified: return "Prefer not to say"
-        }
-    }
-}
-
-#Preview {
-    NavigationStack {
-        ProfileView()
-    }
-}
-

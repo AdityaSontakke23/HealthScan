@@ -8,38 +8,31 @@
 import SwiftUI
 
 struct ContentView: View {
-    @StateObject private var measurementStore = MeasurementStore()
+    @State private var measurementStore = MeasurementStore()
     @State private var selectedTab = 1
     
     var body: some View {
         TabView(selection: $selectedTab) {
-            NavigationStack {
-                HistoryView()
+            Tab("History", systemImage: "clock.arrow.circlepath", value: 0) {
+                NavigationStack {
+                    HistoryView()
+                }
             }
-            .tabItem {
-                Label("History", systemImage: "clock.arrow.circlepath")
-            }
-            .tag(0)
-            .environmentObject(measurementStore)
             
-            NavigationStack {
-                HomeView()
+            Tab("Record", systemImage: "plus.circle.fill", value: 1) {
+                NavigationStack {
+                    HomeView()
+                }
             }
-            .tabItem {
-                Image(systemName: "plus.circle.fill")
-                Text("Record")
-            }
-            .tag(1)
-            .environmentObject(measurementStore)
             
-            NavigationStack {
-                ProfileView()
+            Tab("Profile", systemImage: "person.crop.circle", value: 2) {
+                NavigationStack {
+                    ProfileView()
+                }
             }
-            .tabItem {
-                Label("Profile", systemImage: "person.crop.circle")
-            }
-            .tag(2)
         }
+        .tabBarMinimizeBehavior(.onScrollDown)
+        .environment(measurementStore)
     }
 }
 

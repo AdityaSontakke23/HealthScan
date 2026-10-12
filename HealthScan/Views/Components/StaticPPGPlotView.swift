@@ -32,7 +32,7 @@ struct StaticPPGPlotView: View {
             }
         }
         .background(colorScheme == .dark ? Color.black.opacity(0.35) : Color.white.opacity(0.08))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .clipShape(.rect(cornerRadius: 12))
         .overlay(
             RoundedRectangle(cornerRadius: 12)
                 .stroke(colorScheme == .dark ? Color.white.opacity(0.14) : Color.black.opacity(0.08), lineWidth: 1)
@@ -96,11 +96,11 @@ struct StaticPPGPlotView: View {
         let textColor = colorScheme == .dark ? Color.white.opacity(0.65) : Color(red: 0.0, green: 0.34, blue: 0.65)
         
         // Start label
-        let startText = Text("0s").font(.caption2).foregroundColor(textColor)
+        let startText = Text("0s").font(.caption2).foregroundStyle(textColor)
         context.draw(startText, at: CGPoint(x: 15, y: size.height - 10))
         
         // End label (assuming 30s recording)
-        let endText = Text("30s").font(.caption2).foregroundColor(textColor)
+        let endText = Text("30s").font(.caption2).foregroundStyle(textColor)
         context.draw(endText, at: CGPoint(x: size.width - 15, y: size.height - 10))
     }
 }
