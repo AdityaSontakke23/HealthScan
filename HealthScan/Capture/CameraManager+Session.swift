@@ -17,6 +17,8 @@ extension CameraManager {
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             guard let self = self else { return }
             Task { @MainActor in
+                // Pause countdown automatically whenever the finger is lifted or re-calibrating
+                guard self.contactState == .measuring else { return }
                 if self.timeRemaining > 0 {
                     self.timeRemaining -= 1
                 } else {

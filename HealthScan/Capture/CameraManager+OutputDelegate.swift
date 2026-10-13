@@ -32,8 +32,12 @@ extension CameraManager: AVCaptureVideoDataOutputSampleBufferDelegate {
     func handleFrame(ppgValue: Double, isCovered: Bool, pts: CMTime) {
         guard isRecording else { return }
         
-        // Reject uncovered sensor and ambient light
+        // Reject uncovered sensor and ambient light; unlock exposure so it re-calibrates on next contact
         if !isCovered {
+            if hasLockedExposure {
+                hasLockedExposure = false
+                lockExposureAndWhiteBalance(locked: false)
+            }
             contactState = .noFinger
             calibrationFramesCount = 0
             return

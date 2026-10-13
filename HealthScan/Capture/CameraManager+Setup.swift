@@ -118,16 +118,18 @@ extension CameraManager {
         }
     }
     
-    /// Dynamically lock exposure and white balance once finger covers the lens and signal converges.
-    nonisolated func lockExposureAndWhiteBalance() {
+    /// Dynamically lock or unlock exposure and white balance based on finger contact.
+    nonisolated func lockExposureAndWhiteBalance(locked: Bool = true) {
         guard let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) else { return }
         do {
             try device.lockForConfiguration()
-            if device.isExposureModeSupported(.locked) { device.exposureMode = .locked }
-            if device.isWhiteBalanceModeSupported(.locked) { device.whiteBalanceMode = .locked }
+            let expMode: AVCaptureDevice.ExposureMode = locked ? .locked : .continuousAutoExposure
+            let wbMode: AVCaptureDevice.WhiteBalanceMode = locked ? .locked : .continuousAutoWhiteBalance
+            if device.isExposureModeSupported(expMode) { device.exposureMode = expMode }
+            if device.isWhiteBalanceModeSupported(wbMode) { device.whiteBalanceMode = wbMode }
             device.unlockForConfiguration()
         } catch {
-            print("Lock exposure error: \(error)")
+            print("Exposure configuration error: \(error)")
         }
     }
     
