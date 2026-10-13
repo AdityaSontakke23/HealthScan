@@ -53,8 +53,22 @@ struct MeasurementDetailView: View {
                         }
                         
                         QualityBadge(quality: measurement.quality)
+                        
+                        if let hrv = measurement.hrvMs {
+                            HStack(spacing: 6) {
+                                Image(systemName: "waveform.path.ecg")
+                                    .font(.system(size: 14))
+                                    .foregroundStyle(colorScheme == .dark ? Color.white.opacity(0.7) : primaryBlue.opacity(0.6))
+                                Text(String(format: "%.0f ms HRV", hrv))
+                                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                                    .foregroundStyle(colorScheme == .dark ? Color.white.opacity(0.7) : primaryBlue.opacity(0.6))
+                            }
+                        }
                     }
                     .padding(.top, 20)
+                    
+                    // Detailed Physiological Report & Biomarker Grid
+                    HealthReportCard(measurement: measurement)
                     
                     // PPG Plot
                     VStack(alignment: .leading, spacing: 12) {
@@ -69,8 +83,14 @@ struct MeasurementDetailView: View {
                     
                     // Details
                     VStack(spacing: 12) {
+                        if let tag = measurement.tag {
+                            DetailRow(label: "Activity State", value: tag.rawValue)
+                        }
                         DetailRow(label: "Date", value: measurement.formattedDate)
                         DetailRow(label: "Duration", value: String(format: "%.1f seconds", measurement.duration))
+                        if let hrv = measurement.hrvMs {
+                            DetailRow(label: "HRV (rMSSD)", value: String(format: "%.0f ms", hrv))
+                        }
                         DetailRow(label: "Sample Rate", value: String(format: "%.1f Hz", measurement.sampleRate))
                         DetailRow(label: "Device", value: measurement.deviceModel)
                     }

@@ -147,4 +147,48 @@ final class PPGProcessor: Sendable {
         let sumSquaredDiff = diffs.reduce(0.0) { $0 + ($1 * $1) }
         return sqrt(sumSquaredDiff / Double(diffs.count))
     }
+    
+    /// Estimate respiratory rate (breaths/min) from low-frequency PPG respiratory baseline modulation (0.15-0.40 Hz).
+    func calculateRespiratoryRate(samples: [PPGSample], sampleRate: Double) -> Int? {
+        guard samples.count >= minSamplesForBPM else { return nil }
+        let detrended = removeLinearTrend(samples.map { $0.value })
+        // Low-pass / band-pass around respiratory frequencies using moving averages
+        let shortWindow = max(3, Int(sampleRate * 1.2))
+        let longWindow = max(5, Int(sampleRate * 5.0))
+        let smoothed = movingAverage(signal: detrended, windowSize: shortWindow)
+        let baseline = movingAverage(signal: smoothed, windowSize: longWindow)
+        let respWave = zip(smoothed, baseline).map { $0 - $1 }
+        
+        // Count positive zero-crossings
+        var crossings = 0
+        for i in 1..<respWave.count {
+            if respWave[i - 1] < 0 && respWave[i] >= 0 {
+                crossings += 1
+            }
+        }
+        let duration = samples.last!.timestamp - samples.first!.timestamp
+        guard duration >= 8.0 else { return 15 }
+        let brpm = Int(round((Double(crossings) / duration) * 60.0))
+        return min(max(brpm, 10), 24)
+    }
+    
+    /// Calculate Stress Score (1-100, lower is calmer) from BPM and rMSSD HRV.
+    func calculateStressScore(bpm: Int, hrvMs: Double?) -> Int {
+        let hrv = hrvMs ?? 35.0
+        // Normalize BPM contribution (50 BPM -> 0, 110 BPM -> 100)
+        let bpmNorm = min(max((Double(bpm) - 50.0) / 60.0, 0.0), 1.0) * 100.0
+        // Normalize HRV contribution (80 ms -> 0 stress, 15 ms -> 100 stress)
+        let hrvStress = (1.0 - min(max((hrv - 15.0) / 65.0, 0.0), 1.0)) * 100.0
+        let combined = Int(round(0.45 * bpmNorm + 0.55 * hrvStress))
+        return min(max(combined, 8), 96)
+    }
+    
+    /// Calculate Readiness / Recovery Score (1-100, higher is better) from BPM, HRV, and Stress.
+    func calculateReadinessScore(bpm: Int, hrvMs: Double?, stressScore: Int) -> Int {
+        let hrv = hrvMs ?? 38.0
+        let hrvBonus = min(max((hrv - 20.0) / 60.0, 0.0), 1.0) * 35.0
+        let stressInverse = Double(100 - stressScore) * 0.65
+        let score = Int(round(hrvBonus + stressInverse))
+        return min(max(score, 15), 99)
+    }
 }

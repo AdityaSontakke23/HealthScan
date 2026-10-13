@@ -170,9 +170,12 @@ extension CameraManager {
         let downsampledPPG = ppgProcessor.downsample(samples: cleaned)
         let duration = cleaned.last!.timestamp - cleaned.first!.timestamp
         
-        // Compute rMSSD HRV using actual CMTime-derived timestamps for precision
+        // Compute rMSSD HRV, Respiratory Rate, Stress Score, and Readiness Score
         let hrv = ppgProcessor.calculateHRV(samples: cleaned, sampleRate: sampleRate)
         lastHRVms = hrv
+        let respRate = ppgProcessor.calculateRespiratoryRate(samples: trimmed, sampleRate: sampleRate)
+        let stress = ppgProcessor.calculateStressScore(bpm: finalBPM, hrvMs: hrv)
+        let readiness = ppgProcessor.calculateReadinessScore(bpm: finalBPM, hrvMs: hrv, stressScore: stress)
         
         let measurement = Measurement(
             userId: Self.getUserId(),
@@ -181,7 +184,10 @@ extension CameraManager {
             bpm: finalBPM,
             quality: quality,
             ppgData: downsampledPPG,
-            hrvMs: hrv
+            hrvMs: hrv,
+            stressScore: stress,
+            respiratoryRate: respRate,
+            readinessScore: readiness
         )
         onRecordingComplete?(measurement)
     }

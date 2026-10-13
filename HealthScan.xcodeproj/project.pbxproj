@@ -246,6 +246,9 @@
 				DEVELOPMENT_TEAM = Q6T7XKQ5TZ;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "HealthScan uses the rear camera and flash to measure your heart rate and HRV from your fingertip.";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "HealthScan writes your heart rate and HRV measurements to Apple Health.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "HealthScan writes your heart rate and HRV measurements to Apple Health.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -278,6 +281,9 @@
 				DEVELOPMENT_TEAM = Q6T7XKQ5TZ;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "HealthScan uses the rear camera and flash to measure your heart rate and HRV from your fingertip.";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "HealthScan writes your heart rate and HRV measurements to Apple Health.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "HealthScan writes your heart rate and HRV measurements to Apple Health.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

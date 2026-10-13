@@ -26,6 +26,10 @@ struct Measurement: Codable, Identifiable, Sendable {
     let quality: SignalQuality   // Signal quality assessment
     let ppgData: [Double]        // Downsampled PPG values for storage
     let hrvMs: Double?           // rMSSD HRV in milliseconds, nil if < 3 peaks detected
+    let tag: MeasurementTag?     // Optional user context tag
+    let stressScore: Int?        // Autonomic stress index (1-100, lower is calmer)
+    let respiratoryRate: Int?    // Estimated breaths per minute (9-24 brpm)
+    let readinessScore: Int?     // Overall recovery / readiness score (1-100, higher is better)
     
     init(
         userId: String,
@@ -35,7 +39,11 @@ struct Measurement: Codable, Identifiable, Sendable {
         bpm: Int,
         quality: SignalQuality,
         ppgData: [Double],
-        hrvMs: Double? = nil
+        hrvMs: Double? = nil,
+        tag: MeasurementTag? = nil,
+        stressScore: Int? = nil,
+        respiratoryRate: Int? = nil,
+        readinessScore: Int? = nil
     ) {
         self.id = UUID()
         self.userId = userId
@@ -47,6 +55,10 @@ struct Measurement: Codable, Identifiable, Sendable {
         self.quality = quality
         self.ppgData = ppgData
         self.hrvMs = hrvMs
+        self.tag = tag
+        self.stressScore = stressScore
+        self.respiratoryRate = respiratoryRate
+        self.readinessScore = readinessScore
     }
     
     /// Get device model name

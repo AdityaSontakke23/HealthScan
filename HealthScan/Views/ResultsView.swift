@@ -2,10 +2,11 @@
 //  ResultsView.swift
 //  ClimbPulse
 //
-//  Results screen showing final BPM, quality assessment, and PPG plot.
+//  Results screen showing final BPM, quality assessment, context tag selector, report, and PPG plot.
 //
 
 import SwiftUI
+import UIKit
 
 struct ResultsView: View {
     let measurement: Measurement
@@ -13,12 +14,33 @@ struct ResultsView: View {
     
     @Environment(MeasurementStore.self) var measurementStore
     @State var isSaved = false
+    @State var bpmScale: Double = 0.7
+    @State var showTagPicker = false
+    @State var selectedTag: MeasurementTag = .resting
+    @State var healthKitExported = false
     @Environment(\.colorScheme) var colorScheme
     
     // JYU-inspired palette
     let primaryBlue = Color(red: 0.0, green: 0.34, blue: 0.65)      // #0056A5
     let darkBlue = Color(red: 0.02, green: 0.16, blue: 0.32)       // #042948
     let accentOrange = Color(red: 1.0, green: 0.51, blue: 0.0)     // #FF8200
+    
+    var activeMeasurement: Measurement {
+        Measurement(
+            userId: measurement.userId,
+            timestamp: measurement.timestamp,
+            duration: measurement.duration,
+            sampleRate: measurement.sampleRate,
+            bpm: measurement.bpm,
+            quality: measurement.quality,
+            ppgData: measurement.ppgData,
+            hrvMs: measurement.hrvMs,
+            tag: selectedTag,
+            stressScore: measurement.stressScore,
+            respiratoryRate: measurement.respiratoryRate,
+            readinessScore: measurement.readinessScore
+        )
+    }
     
     var backgroundGradient: LinearGradient {
         if colorScheme == .dark {
@@ -59,9 +81,11 @@ struct ResultsView: View {
                     .ignoresSafeArea()
                 
                 ScrollView {
-                    VStack(spacing: 32) {
+                    VStack(spacing: 24) {
                         successHeaderSection
                         bpmResultCardSection
+                        contextTagSelectorSection
+                        HealthReportCard(measurement: activeMeasurement)
                         ppgPlotSection
                         measurementDetailsSection
                         actionButtonsSection
@@ -77,23 +101,38 @@ struct ResultsView: View {
                     }
                 }
             }
+            .onAppear {
+                if let existingTag = measurement.tag {
+                    selectedTag = existingTag
+                }
+            }
         }
     }
     
     func saveAndDismiss() {
-        measurementStore.save(measurement)
-        withAnimation {
-            isSaved = true
+        let tagged = activeMeasurement
+        measurementStore.save(tagged)
+        Task {
+            _ = await HealthKitManager.shared.requestAuthorization()
+            await HealthKitManager.shared.export(tagged)
         }
+        withAnimation { isSaved = true }
     }
     
     private func createShareText() -> String {
+        let current = activeMeasurement
+        let report = HealthReportGenerator.generate(for: current)
+        var text = """
+        HealthScan Physiological Report
+        State: \(selectedTag.rawValue)
+        Heart Rate: \(current.bpm) BPM
         """
-        ClimbPulse Heart Rate Measurement
-        ❤️ \(measurement.bpm) BPM
-        📊 Quality: \(measurement.quality.rawValue)
-        📅 \(measurement.formattedDate)
-        """
+        if let hrv = current.hrvMs { text += "\nHRV (rMSSD): \(Int(hrv)) ms" }
+        if let stress = current.stressScore { text += "\nStress Score: \(stress)/100" }
+        if let resp = current.respiratoryRate { text += "\nRespiratory Rate: \(resp) brpm" }
+        if let ready = current.readinessScore { text += "\nReadiness: \(ready)%" }
+        text += "\n\nSummary: \(report.headline)\n\(report.executiveSummary)"
+        return text
     }
 }
 

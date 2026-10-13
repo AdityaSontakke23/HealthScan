@@ -49,6 +49,7 @@ class CameraManager: NSObject {
     nonisolated let recordingState = RecordingState()
     
     var timer: Timer?
+    var simulatorTimer: Timer?
     let recordingDuration: Int = 30
     
     let ppgProcessor = PPGProcessor()
@@ -88,6 +89,9 @@ class CameraManager: NSObject {
         hasLockedExposure = false
         frameCounter = 0
         
+        #if targetEnvironment(simulator)
+        startSimulatorDemo()
+        #else
         sessionQueue.async { [weak self] in
             guard let self = self else { return }
             
@@ -119,12 +123,15 @@ class CameraManager: NSObject {
                 }
             }
         }
+        #endif
     }
     
     /// Stop recording and process final results.
     func stopRecording() {
         timer?.invalidate()
         timer = nil
+        simulatorTimer?.invalidate()
+        simulatorTimer = nil
         
         let session = captureSession
         sessionQueue.async { [weak self] in
@@ -153,6 +160,11 @@ class CameraManager: NSObject {
         let sampleRate = estimatedSampleRate()
         let bpm = ppgProcessor.calculateBPM(from: samples, sampleRate: sampleRate)
         self.currentBPM = bpm
+        // Heartbeat haptic — fire once per BPM update cycle
+        if bpm != nil {
+            let impact = UIImpactFeedbackGenerator(style: .light)
+            impact.impactOccurred()
+        }
         
         if !samples.isEmpty {
             self.signalQuality = ppgProcessor.assessQuality(samples: samples, sampleRate: sampleRate)

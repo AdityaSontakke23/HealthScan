@@ -42,6 +42,30 @@ struct MeasurementRow: View {
                 Text(measurement.timestamp.formatted(date: .omitted, time: .shortened))
                     .font(.system(size: 13, weight: .medium, design: .rounded))
                     .foregroundStyle(colorScheme == .dark ? Color.white.opacity(0.6) : primaryBlue.opacity(0.5))
+                
+                HStack(spacing: 10) {
+                    if let hrv = measurement.hrvMs {
+                        HStack(spacing: 4) {
+                            Image(systemName: "waveform.path.ecg")
+                                .font(.system(size: 11))
+                                .foregroundStyle(accentOrange)
+                            Text("\(Int(hrv)) ms HRV")
+                                .font(.system(size: 12, weight: .medium, design: .rounded))
+                                .foregroundStyle(colorScheme == .dark ? Color.white.opacity(0.55) : primaryBlue.opacity(0.45))
+                        }
+                    }
+                    
+                    if let tag = measurement.tag {
+                        HStack(spacing: 4) {
+                            Image(systemName: tag.iconName)
+                                .font(.system(size: 10))
+                                .foregroundStyle(accentOrange)
+                            Text(tag.rawValue)
+                                .font(.system(size: 12, weight: .medium, design: .rounded))
+                                .foregroundStyle(colorScheme == .dark ? Color.white.opacity(0.6) : primaryBlue.opacity(0.5))
+                        }
+                    }
+                }
             }
             
             Spacer()

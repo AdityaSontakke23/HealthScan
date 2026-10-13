@@ -16,9 +16,22 @@ struct LastMeasurementCard: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Last Measurement")
-                .font(.system(size: 12, weight: .medium, design: .rounded))
-                .foregroundStyle(colorScheme == .dark ? Color.white.opacity(0.6) : primaryBlue.opacity(0.5))
+            HStack {
+                Text("Last Measurement")
+                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .foregroundStyle(colorScheme == .dark ? Color.white.opacity(0.6) : primaryBlue.opacity(0.5))
+                Spacer()
+                if let tag = measurement.tag {
+                    HStack(spacing: 4) {
+                        Image(systemName: tag.iconName)
+                            .font(.system(size: 10))
+                            .foregroundStyle(accentOrange)
+                        Text(tag.rawValue)
+                            .font(.system(size: 11, weight: .semibold, design: .rounded))
+                            .foregroundStyle(colorScheme == .dark ? Color.white.opacity(0.7) : primaryBlue.opacity(0.65))
+                    }
+                }
+            }
             
             HStack {
                 HStack(spacing: 6) {
@@ -30,6 +43,21 @@ struct LastMeasurementCard: View {
                     Text("BPM")
                         .font(.system(size: 14, weight: .medium, design: .rounded))
                         .foregroundStyle(colorScheme == .dark ? Color.white.opacity(0.7) : primaryBlue.opacity(0.6))
+                    
+                    if let hrv = measurement.hrvMs {
+                        Spacer()
+                        HStack(spacing: 4) {
+                            Image(systemName: "waveform.path.ecg")
+                                .font(.system(size: 13))
+                                .foregroundStyle(accentOrange)
+                            Text("\(Int(hrv)) ms")
+                                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                                .foregroundStyle(colorScheme == .dark ? Color.white.opacity(0.7) : primaryBlue.opacity(0.6))
+                            Text("HRV")
+                                .font(.system(size: 12, weight: .medium, design: .rounded))
+                                .foregroundStyle(colorScheme == .dark ? Color.white.opacity(0.5) : primaryBlue.opacity(0.4))
+                        }
+                    }
                 }
                 
                 Spacer()

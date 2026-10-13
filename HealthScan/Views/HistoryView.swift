@@ -6,10 +6,12 @@
 //
 
 import SwiftUI
+import Charts
 
 struct HistoryView: View {
     @Environment(MeasurementStore.self) private var measurementStore
     @State private var selectedMeasurement: Measurement?
+    @State private var showChart = false
     @Environment(\.colorScheme) private var colorScheme
     
     // JYU-inspired palette
@@ -53,29 +55,56 @@ struct HistoryView: View {
                     description: Text("Your heart rate measurements will appear here")
                 )
             } else {
-                List {
-                    ForEach(groupedMeasurements, id: \.0) { dateString, measurements in
-                        Section {
-                            ForEach(measurements) { measurement in
-                                Button {
-                                    selectedMeasurement = measurement
-                                } label: {
-                                    MeasurementRow(measurement: measurement)
+                VStack(spacing: 0) {
+                    // Toggle button for chart
+                    Button {
+                        withAnimation(.spring(response: 0.4)) {
+                            showChart.toggle()
+                        }
+                    } label: {
+                        Label(showChart ? "Hide Trend" : "Show Trend", systemImage: showChart ? "chart.line.uptrend.xyaxis.circle.fill" : "chart.line.uptrend.xyaxis.circle")
+                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+                            .foregroundStyle(primaryText)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                            .background(primaryText.opacity(0.08))
+                            .clipShape(Capsule())
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 8)
+                    
+                    if showChart {
+                        BPMTrendChart(measurements: measurementStore.measurements)
+                            .frame(height: 160)
+                            .padding(.horizontal, 16)
+                            .padding(.bottom, 8)
+                            .transition(.move(edge: .top).combined(with: .opacity))
+                    }
+                    
+                    List {
+                        ForEach(groupedMeasurements, id: \.0) { dateString, measurements in
+                            Section {
+                                ForEach(measurements) { measurement in
+                                    Button {
+                                        selectedMeasurement = measurement
+                                    } label: {
+                                        MeasurementRow(measurement: measurement)
+                                    }
+                                    .buttonStyle(.plain)
                                 }
-                                .buttonStyle(.plain)
+                                .onDelete { offsets in
+                                    deleteMeasurements(in: measurements, at: offsets)
+                                }
+                            } header: {
+                                Text(dateString)
+                                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                                    .foregroundStyle(secondaryText)
                             }
-                            .onDelete { offsets in
-                                deleteMeasurements(in: measurements, at: offsets)
-                            }
-                        } header: {
-                            Text(dateString)
-                                .font(.system(size: 14, weight: .semibold, design: .rounded))
-                                .foregroundStyle(secondaryText)
                         }
                     }
+                    .listStyle(.insetGrouped)
+                    .scrollContentBackground(.hidden)
                 }
-                .listStyle(.insetGrouped)
-                .scrollContentBackground(.hidden)
             }
         }
         .navigationTitle("History")

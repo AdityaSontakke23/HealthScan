@@ -13,6 +13,9 @@ struct ProfileView: View {
     @AppStorage("profile_education") private var education: Education = .unspecified
     @AppStorage("profile_weight") private var weight: String = ""
     @AppStorage("profile_height") private var height: String = ""
+    @AppStorage("reminderEnabled") private var reminderEnabled = false
+    @AppStorage("reminderHour") private var reminderHour = 8
+    @AppStorage("reminderMinute") private var reminderMinute = 0
     
     @State private var showBirthSheet = false
     @State private var showWeightSheet = false
@@ -77,6 +80,55 @@ struct ProfileView: View {
                         Text(height.isEmpty ? "Not set" : height)
                             .foregroundStyle(.secondary)
                     }
+                }
+            }
+            
+            Section("Notifications") {
+                Toggle("Daily Reminder", isOn: $reminderEnabled)
+                    .onChange(of: reminderEnabled) { _, enabled in
+                        Task {
+                            if enabled {
+                                let granted = await NotificationManager.shared.requestAuthorization()
+                                if granted {
+                                    await NotificationManager.shared.scheduleDailyReminder(
+                                        hour: reminderHour,
+                                        minute: reminderMinute
+                                    )
+                                } else {
+                                    reminderEnabled = false
+                                }
+                            } else {
+                                NotificationManager.shared.cancelReminder()
+                            }
+                        }
+                    }
+                
+                if reminderEnabled {
+                    DatePicker(
+                        "Reminder time",
+                        selection: Binding(
+                            get: {
+                                Calendar.current.date(
+                                    bySettingHour: reminderHour,
+                                    minute: reminderMinute,
+                                    second: 0,
+                                    of: Date()
+                                ) ?? Date()
+                            },
+                            set: { date in
+                                let comps = Calendar.current.dateComponents([.hour, .minute], from: date)
+                                reminderHour = comps.hour ?? 8
+                                reminderMinute = comps.minute ?? 0
+                                Task {
+                                    await NotificationManager.shared.scheduleDailyReminder(
+                                        hour: reminderHour,
+                                        minute: reminderMinute
+                                    )
+                                }
+                            }
+                        ),
+                        displayedComponents: .hourAndMinute
+                    )
                 }
             }
         }
