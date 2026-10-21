@@ -62,7 +62,7 @@ HealthScan/
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/your-username/HealthScan.git
+   git clone https://github.com/AdityaSontakke23/HealthScan.git
    cd HealthScan
    ```
 
